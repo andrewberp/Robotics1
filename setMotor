@@ -1,0 +1,37 @@
+void setMotors() {
+  motorCm = millis();
+  if (motorCm > motorPm + MOTOR_PERIOD) {
+    double pidOutput = 0.0; // Initialize PID output for the current cycle
+
+    // Check the direction the head is facing to decide which PID parameters to use
+    if (headDirection == 1) { // Assuming 1 for right, adjust as per your setup
+      // Calculate PID for right orientation
+      double error = desiredStateR - distance;
+      double proportional = kpR * error;
+      double derivative = kdR * (error - priorErrorR);
+      priorErrorR = error;
+      pidOutput = proportional + derivative; // PID output for right direction
+    } else {
+      // Calculate PID for straight (or left, adjust as needed)
+      double error = desiredStateS - distance;
+      double proportional = kpS * error;
+      double derivative = kdS * (error - priorErrorS);
+      priorErrorS = error;
+      pidOutput = proportional + derivative; // PID output for straight direction
+    }
+
+    // Adjust motor speeds based on PID output
+    float leftSpeed = MOTOR_BASE_SPEED + pidOutput;
+    float rightSpeed = MOTOR_BASE_SPEED - pidOutput;
+
+    // Debug output
+    Serial.print("PID Output: "); Serial.println(pidOutput);
+    Serial.print("Left Speed: "); Serial.print(leftSpeed);
+    Serial.print(" Right Speed: "); Serial.println(rightSpeed);
+
+    // Apply speeds to motors (ensure direction is correctly set)
+    motors.setSpeeds(leftSpeed, rightSpeed);
+
+    motorPm = motorCm;
+  }
+}
