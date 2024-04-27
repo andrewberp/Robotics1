@@ -104,7 +104,7 @@ void checkEncoders() {
 
 void navigateToTarget() {
     if (goalCounter < NUMBER_OF_GOALS) {
-        float distanceToTarget = sqrt(pow(yGoals[goalCounter] - x, 2) + pow(xGoals[goalCounter] - y, 2));
+        float distanceToTarget = sqrt(pow(yGoals[goalCounter] - y, 2) + pow(xGoals[goalCounter] - x, 2));
         Serial.print("Distance to Target: ");
         Serial.print(distanceToTarget);
         Serial.println(" cm");
@@ -113,7 +113,8 @@ void navigateToTarget() {
         float Kp_angle = 30.0; 
 
         if (distanceToTarget > 4.0) {
-            float angleToTarget = atan2(xGoals[goalCounter] - y, yGoals[goalCounter] - x);
+            // Calculate angle to target, as usual
+            float angleToTarget = atan2(yGoals[goalCounter] - y, xGoals[goalCounter] - x);
             float angleDifference = fmod(angleToTarget - theta + PI, 2 * PI) - PI;
 
             Serial.print("Angle to Target: ");
@@ -125,18 +126,20 @@ void navigateToTarget() {
             Serial.println(" radians");
 
             // Apply proportional control based on the angle difference
-            float turnSpeed = (float)(Kp_angle * angleDifference);
-            //turnSpeed = constrain(turnSpeed, -200, 200); // Constrain to max/min motor speed
+            float turnSpeed = Kp_angle * angleDifference;
 
-            // Calculate motor speeds
-            float leftSpeed = MOTOR_BASE_SPEED - turnSpeed;
-            float rightSpeed = MOTOR_BASE_SPEED + turnSpeed;
+            // Reverse motor speeds so positive values move the robot in the sensor's direction
+            // If the robot's wheels are currently configured such that a positive value makes it move "forward" (away from the sensor),
+            // we invert the values to make a positive value make it move "backward" (toward the sensor)
+            float leftSpeed = -MOTOR_BASE_SPEED + turnSpeed;
+            float rightSpeed = -MOTOR_BASE_SPEED - turnSpeed;
+
             motors.setSpeeds(leftSpeed, rightSpeed);
-            Serial.print("Turning with speed: ");
-            Serial.println(turnSpeed);
-                
-            }
-         else {
+            Serial.print("Motor Speed - Left: ");
+            Serial.print(leftSpeed);
+            Serial.print(", Right: ");
+            Serial.println(rightSpeed);
+        } else {
             motors.setSpeeds(0, 0);
             Serial.print("Reached Target: ");
             Serial.println(goalCounter);
@@ -146,7 +149,6 @@ void navigateToTarget() {
                 isAtTarget = true;
                 buzzer.play("b32");
             }
-            
         }
     }
 }
